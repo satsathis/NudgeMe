@@ -5,7 +5,7 @@ WORKDIR /app/NudgeMeWeb
 COPY NudgeMeWeb/package*.json ./
 RUN npm install
 COPY NudgeMeWeb/ .
-RUN npm run build -- --output-path=dist
+RUN npm run build:prod -- --output-path=dist
 
 # Build .NET backend
 
