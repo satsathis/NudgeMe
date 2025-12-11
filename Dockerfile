@@ -33,5 +33,15 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Expose ports
 EXPOSE 80
 
+# Create entrypoint script
+RUN echo '#!/bin/sh\n\
+set -e\n\
+echo "Starting .NET backend..."\n\
+dotnet /app/NudgeMeAPI/NudgeMeAPI.dll &\n\
+API_PID=$!\n\
+echo "Starting Nginx..."\n\
+exec nginx -g "daemon off;"\n\
+' > /entrypoint.sh && chmod +x /entrypoint.sh
+
 # Start both backend and Nginx
-CMD service nginx start && dotnet NudgeMeAPI/NudgeMeAPI.dll
+CMD ["/entrypoint.sh"]
