@@ -1,5 +1,15 @@
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure WebRootPath to use wwwroot from output directory
+var outputWwwroot = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+builder.Environment.WebRootPath = outputWwwroot;
+if (Directory.Exists(outputWwwroot))
+{
+    builder.Environment.WebRootFileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(outputWwwroot);
+}
+Console.WriteLine($"WebRootPath set to: {builder.Environment.WebRootPath}");
+Console.WriteLine($"Directory exists: {Directory.Exists(outputWwwroot)}");
+
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -30,7 +40,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-
+// Serve static files first
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.UseCors("NudgeMeCors");
 
@@ -41,8 +53,6 @@ if (!string.IsNullOrWhiteSpace(dbDir) && !Directory.Exists(dbDir))
 {
     Directory.CreateDirectory(dbDir);
 }
-
-Console.WriteLine($"SQLite dfasf at {dbPath}");
 
 using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath}"))
 {
@@ -59,15 +69,16 @@ using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source
     Console.WriteLine($"SQLite initialized at {dbPath}");
 }
 
-app.MapControllers();
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.Run();
 }
-else
-{
-    app.Run("http://0.0.0.0:5000");
-}
+
+// Map API controllers
+app.MapControllers();
+
+// Fallback to index.html for client-side routing (SPA)
+app.MapFallbackToFile("index.html");
+
+app.Run();
